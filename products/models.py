@@ -2,7 +2,6 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.text import slugify
-from abc import ABC,abstractmethod
 
 
 def validate_positive(value):
@@ -10,14 +9,7 @@ def validate_positive(value):
         raise ValidationError('Price must be a positive integer.')
 
 
-class BaseProduct(ABC):
-    @abstractmethod
-    def get_absolute_url(self):
-        raise NotImplementedError
-
-
-
-class Product(models.Model,BaseProduct):
+class Product(models.Model):
     title = models.CharField(max_length=80, verbose_name='عنوان')
     price = models.IntegerField(validators=[validate_positive], verbose_name='قیمت')
     slug = models.SlugField(blank=False, unique=True, db_index=True, verbose_name='عنوان در url')
@@ -28,7 +20,7 @@ class Product(models.Model,BaseProduct):
     count = models.SmallIntegerField(verbose_name='تعداد محصول')
     is_active = models.BooleanField(default=True, blank=True, verbose_name='فعال و غیر فعال')
     is_delete = models.BooleanField(default=False, verbose_name='حذف شده یا نشده')
-    categories = models.ManyToManyField('CategoryProduct', related_name='product_category', verbose_name='دسته بندی ها')
+    categories = models.ManyToManyField('CategoryProduct', related_name='product_category',null=True, verbose_name='دسته بندی ها')
 
     def __str__(self):
         return f"{self.title}-{self.short_description}"
@@ -38,8 +30,7 @@ class Product(models.Model,BaseProduct):
         verbose_name_plural = 'محصولات'
 
     def get_absolute_url(self):
-           pass
-
+           raise NotImplemented
 
 
     def save(self, *args, **kwargs):
@@ -47,11 +38,9 @@ class Product(models.Model,BaseProduct):
         super().save(*args, **kwargs)
 
 
-class CategoryProduct(models.Model,BaseProduct):
+class CategoryProduct(models.Model):
     slug_url = models.CharField(max_length=100, null=False, verbose_name='url دسته بندی')
-    parent_category = models.ForeignKey('CategoryProduct', on_delete=models.CASCADE,
-                                        verbose_name='والد دسته بندی', related_name='parent_category')
-    title = models.CharField(default="", verbose_name='عنوان دسته بندی')
+    title = models.CharField(max_length=40,default="", verbose_name='عنوان دسته بندی')
     is_active = models.BooleanField(default=True, verbose_name='فعال یا غیر فعال')
     is_delete = models.BooleanField(default=False, verbose_name='حذف شده یا نشده')
 
@@ -59,7 +48,7 @@ class CategoryProduct(models.Model,BaseProduct):
         return f"({self.title})"
 
     def get_absolute_url(self):
-           pass
+           raise NotImplemented
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.title)
@@ -68,7 +57,7 @@ class CategoryProduct(models.Model,BaseProduct):
 
 
 
-class BrandProduct(models.Model,BaseProduct):
+class BrandProduct(models.Model):
     product = models.ForeignKey(Product,on_delete=models.CASCADE,related_name='product_brand')
     title = models.CharField(max_length=50,verbose_name='عنوان')
     slug_url = models.SlugField(blank=False,db_index=True,verbose_name='عنوان درurl')
@@ -77,7 +66,7 @@ class BrandProduct(models.Model,BaseProduct):
         return f"{self.title}"
 
     def get_absolute_url(self):
-           pass
+           raise NotImplemented
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.title)
